@@ -119,13 +119,17 @@ class CNN3D:
 
         return torch.mean(torch.tensor(val_mean_loss)).item()
 
-    def train(self, train_data, val_data, epochs=50, learning_rate=0.001, momentum=0.9,
-              print_every=50, save_every=100):
+    def train(self, train_data, val_data, test_data, epochs=50, learning_rate=0.001, momentum=0.9,
+              print_every=1, save_every=10):
 
+        self.train_losses = []
+        self.val_losses = []
+        self.test_losses = []
         self.optimizer = optim.SGD(self.CNN.parameters(), lr=learning_rate, momentum=momentum)
         scheduler = optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, 'min', factor=0.1, verbose=True, threshold_mode="abs")
 
         for e in range(epochs):
+            mean_epoch_train_loss = []
             for t, (x, y) in tqdm(enumerate(train_data), desc="EPOCH " + str(e),total=len(train_data)):
 
                 self.CNN.train()
@@ -135,6 +139,7 @@ class CNN3D:
 
                 y_pred = self.CNN(x)
                 loss = self.loss(y_pred, y)
+                mean_epoch_train_loss.append(loss.item())
 
                 self.optimizer.zero_grad()
 
@@ -148,11 +153,35 @@ class CNN3D:
                 if t % save_every == 0:
                     torch.save(self.CNN.state_dict(), "models/CNN_latest.pt")
 
+            self.train_losses.append(np.mean(mean_epoch_train_loss))
             val_loss = self._validation_eval(val_data)
             scheduler.step(val_loss)
+            self.val_losses.append(val_loss)
+            test_loss = self._validation_eval(test_data)
+            self.test_losses.append(test_loss)
+            self.plot_loss()
+
+    def plot_loss(self):
+
+        plt.plot(self.train_losses, label="training loss")
+        plt.plot(self.test_losses, label="testing loss")
+        plt.plot(self.val_losses, label="validation loss")
+        plt.legend()
+        plt.xlabel("epochs")
+        plt.ylabel("loss")
+        plt.title("Loss as a function of the training epochs for training, validation and testing data")
+        plt.savefig("graphics/lossovertime.png")
+        plt.close()
+
+        np.save("tmp/train_loss.npy", np.array(self.train_losses))
+        np.save("tmp/test_loss.npy", np.array(self.test_losses))
+        np.save("tmp/val_loss.npy", np.array(self.val_losses))
 
     def load_model(self):
         self.CNN.load_state_dict(torch.load("models/CNN_latest.pt"))
+        self.train_losses = np.load("tmp/train_loss.npy").tolist()
+        self.val_losses = np.load("tmp/val_loss.npy").tolist()
+        self.test_losses = np.load("tmp/val_loss.npy").tolist()
 
     def infer(self, test_data):
         self.CNN.eval()  # set model to evaluation mode

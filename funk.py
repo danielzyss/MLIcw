@@ -1,10 +1,8 @@
 from tools import *
 from Dataset import BrainMRIDataset
+from torch.utils.data import random_split
 
-def GetDataset(meta_data):
-
-    train_meta_data = meta_data[:500]
-    val_meta_data = meta_data[500:600].reset_index()
+def GetDataset(meta_data_train, meta_data_test):
 
     transformation_train = T.Compose([T.RandomHorizontalFlip(),
                                       T.ToTensor()])
@@ -13,15 +11,20 @@ def GetDataset(meta_data):
 
     # PYTORCH TRANSFORMATION NOT SUPPORTED FOR 3D IMAGES
 
-    train_dataset = BrainMRIDataset(train_meta_data)
-    val_dataset = BrainMRIDataset(val_meta_data)
+    train_dataset = BrainMRIDataset(meta_data_train)
+    test_dataset = BrainMRIDataset(meta_data_train)
+
+    train_dataset, val_dataset = random_split(train_dataset, [400, 100])
 
     loader_train = DataLoader(train_dataset,
                              batch_size=16,
                              shuffle=True)
     loader_val = DataLoader(val_dataset,
                             batch_size=16,
-                            shuffle=True)
+                            shuffle=True,)
+    loader_test = DataLoader(test_dataset,
+                            batch_size=16,
+                            shuffle=True,)
 
-    return loader_train, loader_val
+    return loader_train, loader_val, loader_test
 
