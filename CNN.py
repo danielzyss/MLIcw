@@ -127,6 +127,7 @@ class CNN3D:
         self.test_losses = []
         self.optimizer = optim.SGD(self.CNN.parameters(), lr=learning_rate, momentum=momentum)
         scheduler = optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, 'min', factor=0.1, verbose=True, threshold_mode="abs")
+        self.CNN.to(device)
 
         for e in range(epochs):
             mean_epoch_train_loss = []

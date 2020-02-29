@@ -25,3 +25,5 @@ if USE_GPU and torch.cuda.is_available():
     device = torch.device('cuda')
 else:
     device = torch.device('cpu')
+
+print("PYTORCH RUNNING ON DEVICE : ", device)
