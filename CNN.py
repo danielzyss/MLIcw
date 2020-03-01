@@ -95,12 +95,12 @@ class CNNModel(nn.Module):
         b1 = self.Block1(stem)
         b2 = self.Block2(b1)
         b3 = self.Block3(b2)
-        b4 = self.Block4(b3).view(-1, 512)
+        # b4 = self.Block4(b3).view(-1, 512)
 
-        # avgpool = self.average_pool(b3)
-        # avgpool = avgpool.squeeze(-1).squeeze(-1).squeeze(-1)
+        avgpool = self.average_pool(b3)
+        avgpool = avgpool.view(-1, 512)
 
-        d1 = self.relu(self.dense512(b4))
+        d1 = self.relu(self.dense512(avgpool))
         d2 = self.relu(self.dense256(d1))
         d3 = self.relu(self.dense128(d2))
 
@@ -129,7 +129,7 @@ class CNN3D:
         return torch.mean(torch.tensor(val_mean_loss)).item()
 
     def train(self, train_data, val_data, test_data, epochs=100, learning_rate=0.0001,
-              print_every=1, save_every=10):
+              print_every=10, save_every=10):
 
         self.train_losses = []
         self.val_losses = []
