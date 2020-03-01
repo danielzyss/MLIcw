@@ -119,14 +119,14 @@ class CNN3D:
 
         return torch.mean(torch.tensor(val_mean_loss)).item()
 
-    def train(self, train_data, val_data, test_data, epochs=100, learning_rate=0.00005, momentum=0.9,
+    def train(self, train_data, val_data, test_data, epochs=100, learning_rate=0.0005, momentum=0.9,
               print_every=1, save_every=10):
 
         self.train_losses = []
         self.val_losses = []
         self.test_losses = []
-        self.optimizer = optim.SGD(self.CNN.parameters(), lr=learning_rate, momentum=momentum)
-        scheduler = optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, 'min', factor=0.1, verbose=True, threshold_mode="abs")
+        self.optimizer = optim.Adam(self.CNN.parameters(), lr=learning_rate,betas=(0.5, 0.999), weight_decay=1e-5)
+        scheduler = optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, 'min', factor=0.1, verbose=True, threshold_mode="abs",patience=20)
         self.CNN.to(device)
 
         for e in range(epochs):
