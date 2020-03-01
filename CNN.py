@@ -71,9 +71,9 @@ class CNNModel(nn.Module):
         self.Block3 = nn.Sequential(InceptionBlock(512),
                                     InceptionBlock(480),
                                     FireModule(480))
-        self.Block4 = nn.Sequential(InceptionBlock(512),
-                                    InceptionBlock(480),
-                                    FireModule(480))
+        # self.Block4 = nn.Sequential(InceptionBlock(512),
+        #                             InceptionBlock(480),
+        #                             FireModule(480))
 
         self.average_pool = AvgPool3d(kernel_size=2)
 
