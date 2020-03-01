@@ -3,7 +3,7 @@ from tools import *
 class BrainMRIDataset(Dataset):
     """Dataset for image segmentation."""
 
-    def __init__(self, meta_data, transform=None):
+    def __init__(self, meta_data, transform=None, chunk=True, n_chunk=10):
 
         self.IDs = meta_data["subject_id"]
         self.image_paths = {}
@@ -13,6 +13,8 @@ class BrainMRIDataset(Dataset):
             self.image_paths[ID] = mg_path
             self.ages[ID] = meta_data["age"][i]
         self.transform = transform
+        self.chunk = chunk
+        self.n_chunk = n_chunk
 
     def __len__(self):
         return len(self.IDs)
@@ -22,11 +24,24 @@ class BrainMRIDataset(Dataset):
         MRI = sitk.GetArrayFromImage(sitk.ReadImage(self.image_paths[ID]))
         MRI = NormalizeGreyMatter(MRI)
 
+        if self.chunk:
+            MRI = self.ChunkDownImage(MRI)
+
         if self.transform is not None:
             MRI = self.transform(PIL.Image.fromarray(MRI))
         else:
-            MRI = torch.tensor(MRI, dtype=torch.float32).unsqueeze(0)
+            if self.chunk:
+                MRI = torch.tensor(MRI, dtype=torch.float32).unsqueeze(1)
+            else:
+                MRI = torch.tensor(MRI, dtype=torch.float32).unsqueeze(0)
 
         age = torch.tensor(self.ages[ID], dtype=torch.float32).unsqueeze(0)
 
         return (MRI, age)
+
+    def ChunkDownImage(self, MRI):
+
+        chunks = []
+        for i in range(0, self.n_chunk):
+            chunks.append(MRI[:,:,i*int(MRI.shape[2]/self.n_chunk):(i+1)*int(MRI.shape[2]/self.n_chunk)])
+        return np.array(chunks)

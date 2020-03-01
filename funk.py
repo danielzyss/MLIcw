@@ -2,7 +2,7 @@ from tools import *
 from Dataset import BrainMRIDataset
 from torch.utils.data import random_split
 
-def GetDataset(meta_data_train, meta_data_test):
+def GetDataset(meta_data_train, meta_data_test, chunk=True):
 
     transformation_train = T.Compose([T.RandomHorizontalFlip(),
                                       T.ToTensor()])
@@ -11,8 +11,8 @@ def GetDataset(meta_data_train, meta_data_test):
 
     # PYTORCH TRANSFORMATION NOT SUPPORTED FOR 3D IMAGES
 
-    train_dataset = BrainMRIDataset(meta_data_train)
-    test_dataset = BrainMRIDataset(meta_data_train)
+    train_dataset = BrainMRIDataset(meta_data_train, chunk=chunk)
+    test_dataset = BrainMRIDataset(meta_data_test, chunk=chunk)
 
     train_dataset, val_dataset = random_split(train_dataset, [400, 100])
 

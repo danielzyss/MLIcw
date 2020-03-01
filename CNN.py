@@ -16,6 +16,7 @@ class InceptionBlock(nn.Module):
 
 
     def forward(self,x):
+
         x11 = self.conv11(x)
         x12 = self.conv12(x)
         x13 = self.conv13(x)
@@ -36,10 +37,11 @@ class FireModule(nn.Module):
 
         self.conv1 = Conv3d(in_channels, 128, kernel_size=1)
 
-        self.conv21 = Conv3d(128, 256, kernel_size=3, stride=2, padding=1)
-        self.conv22 = Conv3d(128, 256, kernel_size=1, stride=2)
+        self.conv21 = Conv3d(128, 256, kernel_size=3, stride=(2,2,2), padding=1)
+        self.conv22 = Conv3d(128, 256, kernel_size=1, stride=(2,2,2))
 
     def forward(self, x):
+
         x1 = self.conv1(x)
         x21 = self.conv21(x1)
         x22 = self.conv22(x1)
@@ -53,11 +55,11 @@ class CNNModel(nn.Module):
     def __init__(self, ):
         super(CNNModel, self).__init__()
 
-        self.stem = nn.Sequential(Conv3d(1,48, kernel_size=3, stride=2, bias=True, padding=2),
-                                  MaxPool3d(kernel_size=3, stride=2),
+        self.stem = nn.Sequential(Conv3d(1,48, kernel_size=3, stride=(2,2,1), bias=True, padding=2),
+                                  MaxPool3d(kernel_size=3, stride=(2,2,1)),
                                   Conv3d(48,96, kernel_size=3, bias=True, padding=2),
                                   Conv3d(96,192, kernel_size=3, padding=2),
-                                  MaxPool3d(kernel_size=3, stride=2))
+                                  MaxPool3d(kernel_size=3, stride=(2,2,1)))
 
 
         self.Block1 = nn.Sequential(InceptionBlock(192),
@@ -67,6 +69,9 @@ class CNNModel(nn.Module):
                                     InceptionBlock(480),
                                     FireModule(480))
         self.Block3 = nn.Sequential(InceptionBlock(512),
+                                    InceptionBlock(480),
+                                    FireModule(480))
+        self.Block4 = nn.Sequential(InceptionBlock(512),
                                     InceptionBlock(480),
                                     FireModule(480))
 
@@ -82,22 +87,29 @@ class CNNModel(nn.Module):
 
 
     def forward(self, x):
-        stem = self.stem(x)
 
-        b1 = self.Block1(stem)
-        b2 = self.Block2(b1)
-        b3 = self.Block3(b2)
+        chunks_reg = torch.zeros(x.shape[0], x.shape[1])
 
-        avgpool = self.average_pool(b3)
-        avgpool = avgpool.squeeze(-1).squeeze(-1).squeeze(-1)
+        for c in range(0, x.shape[1]):
+            x_chunk = x[:, c]
+            stem = self.stem(x_chunk)
 
-        d1 = self.relu(self.dense512(avgpool))
-        d2 = self.relu(self.dense256(d1))
-        d3 = self.relu(self.dense128(d2))
+            b1 = self.Block1(stem)
+            b2 = self.Block2(b1)
+            b3 = self.Block3(b2)
+            b4 = self.Block4(b3).view(-1, 512)
 
-        output = self.regressor(d3)
+            # avgpool = self.average_pool(b3)
+            # avgpool = avgpool.squeeze(-1).squeeze(-1).squeeze(-1)
 
-        return output
+            d1 = self.relu(self.dense512(b4))
+            d2 = self.relu(self.dense256(d1))
+            d3 = self.relu(self.dense128(d2))
+
+            output = self.regressor(d3)
+            chunks_reg[:,c] = output.flatten()
+
+        return torch.mean(chunks_reg)
 
 
 class CNN3D:
@@ -119,13 +131,13 @@ class CNN3D:
 
         return torch.mean(torch.tensor(val_mean_loss)).item()
 
-    def train(self, train_data, val_data, test_data, epochs=100, learning_rate=0.0005, momentum=0.9,
+    def train(self, train_data, val_data, test_data, epochs=100, learning_rate=0.0001,
               print_every=1, save_every=10):
 
         self.train_losses = []
         self.val_losses = []
         self.test_losses = []
-        self.optimizer = optim.Adam(self.CNN.parameters(), lr=learning_rate,betas=(0.5, 0.999), weight_decay=1e-5)
+        self.optimizer = optim.Adam(self.CNN.parameters(), lr=learning_rate)
         scheduler = optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, 'min', factor=0.1, verbose=True, threshold_mode="abs",patience=20)
         self.CNN.to(device)
 
