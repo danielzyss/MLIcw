@@ -88,7 +88,7 @@ class CNNModel(nn.Module):
 
     def forward(self, x):
 
-        chunks_reg = torch.zeros(x.shape[0], x.shape[1])
+        chunks_reg = torch.zeros(x.shape[0], x.shape[1]).to(device)
 
         for c in range(0, x.shape[1]):
             x_chunk = x[:, c]
