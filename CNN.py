@@ -89,7 +89,6 @@ class CNNModel(nn.Module):
     def forward(self, x):
 
         x = x.view(x.shape[0]*x.shape[1], x.shape[2], x.shape[3], x.shape[4], x.shape[5])
-        print(x.shape)
 
         stem = self.stem(x)
 
