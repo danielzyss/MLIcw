@@ -2,7 +2,7 @@ from tools import *
 from Dataset import BrainMRIDataset
 from torch.utils.data import random_split
 
-def GetDataset(meta_data_train, meta_data_test, chunk=True, batch_size=8):
+def GetDataset(meta_data_train, meta_data_test, chunk=True, batch_size=4):
 
     transformation_train = T.Compose([T.RandomHorizontalFlip(),
                                       T.ToTensor()])
