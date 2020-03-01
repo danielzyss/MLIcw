@@ -6,26 +6,33 @@ class InceptionBlock(nn.Module):
         super(InceptionBlock, self).__init__()
 
         self.conv11 = Conv3d(in_channels, 120 , kernel_size=1, stride=1)
+        self.batchnorm11 = nn.BatchNorm3d(120)
         self.conv12 = Conv3d(in_channels, 120, kernel_size=1, stride=1)
+        self.batchnorm12 = nn.BatchNorm3d(120)
         self.conv13 = Conv3d(in_channels, 120, kernel_size=1, stride=1)
+        self.batchnorm13 = nn.BatchNorm3d(120)
         self.maxpool14 = MaxPool3d(kernel_size=3, padding=1, stride=1)
 
         self.conv22 = Conv3d(120, 120, kernel_size=3, padding=1)
+        self.batchnorm22 = nn.BatchNorm3d(120)
         self.conv23 = Conv3d(120, 120, kernel_size=3, padding=1)
+        self.batchnorm23 = nn.BatchNorm3d(120)
         self.conv24 = Conv3d(in_channels, 120, kernel_size=1)
+        self.batchnorm24 = nn.BatchNorm3d(120)
 
+        self.relu = nn.ReLU()
 
     def forward(self,x):
 
-        x11 = self.conv11(x)
-        x12 = self.conv12(x)
-        x13 = self.conv13(x)
+        x11 = self.relu(self.batchnorm11(self.conv11(x)))
+        x12 = self.relu(self.batchnorm12(self.conv12(x)))
+        x13 = self.relu(self.batchnorm13(self.conv13(x)))
         x14 = self.maxpool14(x)
 
 
-        x22 = self.conv22(x12)
-        x23 = self.conv23(x13)
-        x24 = self.conv24(x14)
+        x22 = self.relu(self.batchnorm22(self.conv22(x12)))
+        x23 = self.relu(self.batchnorm23(self.conv23(x13)))
+        x24 = self.relu(self.batchnorm24(self.conv24(x14)))
 
         output = torch.cat((x11, x22, x23, x24), 1)
 
@@ -36,15 +43,20 @@ class FireModule(nn.Module):
         super(FireModule, self).__init__()
 
         self.conv1 = Conv3d(in_channels, 128, kernel_size=1)
+        self.batchnorm1 = nn.BatchNorm3d(128)
 
         self.conv21 = Conv3d(128, 256, kernel_size=3, stride=(2,2,2), padding=1)
+        self.batchnorm21 = nn.BatchNorm3d(256)
         self.conv22 = Conv3d(128, 256, kernel_size=1, stride=(2,2,2))
+        self.batchnorm22 = nn.BatchNorm3d(256)
+
+        self.relu = nn.ReLU()
 
     def forward(self, x):
 
-        x1 = self.conv1(x)
-        x21 = self.conv21(x1)
-        x22 = self.conv22(x1)
+        x1 = self.relu(self.batchnorm1(self.conv1(x)))
+        x21 = self.relu(self.batchnorm21(self.conv21(x1)))
+        x22 = self.relu(self.batchnorm22(self.conv22(x1)))
 
         output = torch.cat((x21, x22), 1)
 
@@ -56,9 +68,15 @@ class CNNModel(nn.Module):
         super(CNNModel, self).__init__()
 
         self.stem = nn.Sequential(Conv3d(1,48, kernel_size=3, stride=(2,2,1), bias=True, padding=2),
+                                  nn.BatchNorm3d(48),
+                                  nn.ReLU(),
                                   MaxPool3d(kernel_size=3, stride=(2,2,1)),
                                   Conv3d(48,96, kernel_size=3, bias=True, padding=2),
+                                  nn.BatchNorm3d(96),
+                                  nn.ReLU(),
                                   Conv3d(96,192, kernel_size=3, padding=2),
+                                  nn.BatchNorm3d(192),
+                                  nn.ReLU(),
                                   MaxPool3d(kernel_size=3, stride=(2,2,1)))
 
 
@@ -128,13 +146,13 @@ class CNN3D:
 
         return torch.mean(torch.tensor(val_mean_loss)).item()
 
-    def train(self, train_data, val_data, test_data, epochs=100, learning_rate=0.0001,
+    def train(self, train_data, val_data, test_data, epochs=100, learning_rate=0.00005, momentum=0.9,
               print_every=10, save_every=10):
 
         self.train_losses = []
         self.val_losses = []
         self.test_losses = []
-        self.optimizer = optim.Adam(self.CNN.parameters(), lr=learning_rate)
+        self.optimizer = optim.SGD(self.CNN.parameters(), lr=learning_rate, momentum=momentum, weight_decay=0.0005)
         scheduler = optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, 'min', factor=0.1, verbose=True, threshold_mode="abs",patience=20)
         self.CNN.to(device)
 
