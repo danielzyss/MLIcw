@@ -3,7 +3,7 @@ from tools import *
 class BrainMRIDataset(Dataset):
     """Dataset for image segmentation."""
 
-    def __init__(self, meta_data, transform=None, chunk=True, n_chunk=10):
+    def __init__(self, meta_data, transform=None, chunk=True, n_chunk=5):
 
         self.IDs = meta_data["subject_id"]
         self.image_paths = {}
