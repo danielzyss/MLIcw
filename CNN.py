@@ -88,28 +88,25 @@ class CNNModel(nn.Module):
 
     def forward(self, x):
 
-        chunks_reg = torch.zeros(x.shape[0], x.shape[1]).to(device)
+        x = x.view(x.shape[0]*x.shape[1], x.shape[2], x.shape[3], x.shape[4], x.shape[5])
 
-        for c in range(0, x.shape[1]):
-            x_chunk = x[:, c]
-            stem = self.stem(x_chunk)
+        stem = self.stem(x)
 
-            b1 = self.Block1(stem)
-            b2 = self.Block2(b1)
-            b3 = self.Block3(b2)
-            b4 = self.Block4(b3).view(-1, 512)
+        b1 = self.Block1(stem)
+        b2 = self.Block2(b1)
+        b3 = self.Block3(b2)
+        b4 = self.Block4(b3).view(-1, 512)
 
-            # avgpool = self.average_pool(b3)
-            # avgpool = avgpool.squeeze(-1).squeeze(-1).squeeze(-1)
+        # avgpool = self.average_pool(b3)
+        # avgpool = avgpool.squeeze(-1).squeeze(-1).squeeze(-1)
 
-            d1 = self.relu(self.dense512(b4))
-            d2 = self.relu(self.dense256(d1))
-            d3 = self.relu(self.dense128(d2))
+        d1 = self.relu(self.dense512(b4))
+        d2 = self.relu(self.dense256(d1))
+        d3 = self.relu(self.dense128(d2))
 
-            output = self.regressor(d3)
-            chunks_reg[:,c] = output.flatten()
+        output = self.regressor(d3)
 
-        return torch.mean(chunks_reg)
+        return torch.mean(output, 1)
 
 
 class CNN3D:
