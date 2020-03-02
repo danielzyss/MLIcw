@@ -44,6 +44,7 @@ class BrainMRIDataset(Dataset):
 
         age = torch.tensor(self.ages[ID], dtype=torch.float32).unsqueeze(0)
 
+
         return (MRI, age)
 
     def ChunkDownImage(self, MRI):
@@ -66,7 +67,14 @@ class BrainMRIDataset(Dataset):
             MRI = MRI[crop:-crop, crop:-crop, crop:-crop]
             MRI = zoom(MRI, (x/(x-2*crop), y/(y-2*crop), z/(z-2*crop)), order=1)
 
+
         # random shift
         shift_val = random.randint(-8, 8)
-        MRI = shift(MRI, shift_val)
+        MRI = np.roll(MRI, shift_val, axis=(0,1,2))
+        if shift_val>0:
+            MRI[:shift_val, :shift_val, :shift_val]=0.0
+        if shift_val<0:
+            MRI[shift_val:, shift_val:, shift_val:] = 0.0
+
+
         return MRI
