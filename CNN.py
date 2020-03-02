@@ -133,7 +133,6 @@ class CNNModel(nn.Module):
         b3 = self.Block3(b2)
         # b4 = self.Block4(b3).view(-1, 512)
 
-        print(b3.shape)
         avgpool = self.average_pool(b3)
         avgpool = avgpool.view(-1, 512)
 
