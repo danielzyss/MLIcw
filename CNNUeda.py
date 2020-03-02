@@ -133,6 +133,7 @@ class CNN3Dueda:
 
 
     def load_model(self):
+    def load_model(self):
         self.CNN.load_state_dict(torch.load("models/CNN_ueda_latest.pt"))
         self.train_losses = np.load("tmp/train_ueda_loss.npy").tolist()
         self.val_losses = np.load("tmp/val_ueda_loss.npy").tolist()
