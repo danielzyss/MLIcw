@@ -169,7 +169,7 @@ class CNN3D:
 
         return torch.mean(torch.tensor(val_mean_loss)).item()
 
-    def train(self, train_data, val_data, test_data, epochs=100, learning_rate=0.00005, momentum=0.9,
+    def train(self, train_data, val_data, test_data, epochs=100, learning_rate=0.00001, momentum=0.9,
               print_every=10, save_every=10):
 
         self.train_losses = []
@@ -202,7 +202,10 @@ class CNN3D:
                     print('Epoch: %d, Iteration %d, loss = %.4f' % (e, t, loss.item()))
 
                 if t % save_every == 0:
-                    torch.save(self.CNN.state_dict(), "models/CNN_latest.pt")
+                    if self.chunk:
+                        torch.save(self.CNN.state_dict(), "models/CNN_chunk_latest.pt")
+                    else:
+                        torch.save(self.CNN.state_dict(), "models/CNN_latest.pt")
 
             self.train_losses.append(np.mean(mean_epoch_train_loss))
             val_loss = self._validation_eval(val_data)
@@ -226,15 +229,28 @@ class CNN3D:
         plt.savefig("graphics/lossovertime.png")
         plt.close()
 
-        np.save("tmp/train_loss.npy", np.array(self.train_losses))
-        np.save("tmp/test_loss.npy", np.array(self.test_losses))
-        np.save("tmp/val_loss.npy", np.array(self.val_losses))
+        if self.chunk:
+            np.save("tmp/train_loss_chunk.npy", np.array(self.train_losses))
+            np.save("tmp/test_loss_chunk.npy", np.array(self.test_losses))
+            np.save("tmp/val_loss_chunk.npy", np.array(self.val_losses))
+        else:
+            np.save("tmp/train_loss.npy", np.array(self.train_losses))
+            np.save("tmp/test_loss.npy", np.array(self.test_losses))
+            np.save("tmp/val_loss.npy", np.array(self.val_losses))
+
 
     def load_model(self):
-        self.CNN.load_state_dict(torch.load("models/CNN_latest.pt"))
-        self.train_losses = np.load("tmp/train_loss.npy").tolist()
-        self.val_losses = np.load("tmp/val_loss.npy").tolist()
-        self.test_losses = np.load("tmp/val_loss.npy").tolist()
+        if self.chunk:
+            self.CNN.load_state_dict(torch.load("models/CNN_chunk_latest.pt"))
+            self.train_losses = np.load("tmp/train_loss_chunk.npy").tolist()
+            self.val_losses = np.load("tmp/val_loss_chunk.npy").tolist()
+            self.test_losses = np.load("tmp/val_loss_chunk.npy").tolist()
+        else:
+            self.CNN.load_state_dict(torch.load("models/CNN_latest.pt"))
+            self.train_losses = np.load("tmp/train_loss.npy").tolist()
+            self.val_losses = np.load("tmp/val_loss.npy").tolist()
+            self.test_losses = np.load("tmp/val_loss.npy").tolist()
+
 
     def infer(self, test_data):
         self.CNN.eval()  # set model to evaluation mode
