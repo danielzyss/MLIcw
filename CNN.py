@@ -48,7 +48,6 @@ class FireModule(nn.Module):
         self.conv21 = Conv3d(128, 256, kernel_size=3, stride=(2,2,2), padding=1)
         self.batchnorm21 = nn.BatchNorm3d(256)
         self.conv22 = Conv3d(128, 256, kernel_size=1, stride=(2,2,2))
-        self.batchnorm22 = nn.BatchNorm3d(256)
 
         self.relu = nn.ReLU()
 
@@ -56,7 +55,7 @@ class FireModule(nn.Module):
 
         x1 = self.relu(self.batchnorm1(self.conv1(x)))
         x21 = self.relu(self.batchnorm21(self.conv21(x1)))
-        x22 = self.relu(self.batchnorm22(self.conv22(x1)))
+        x22 = self.relu(self.conv22(x1))
 
         output = torch.cat((x21, x22), 1)
 
@@ -64,20 +63,37 @@ class FireModule(nn.Module):
 
 class CNNModel(nn.Module):
 
-    def __init__(self, ):
+    def __init__(self, chunk=True):
         super(CNNModel, self).__init__()
 
-        self.stem = nn.Sequential(Conv3d(1,48, kernel_size=3, stride=(2,2,1), bias=True, padding=2),
-                                  nn.BatchNorm3d(48),
-                                  nn.ReLU(),
-                                  MaxPool3d(kernel_size=3, stride=(2,2,1)),
-                                  Conv3d(48,96, kernel_size=3, bias=True, padding=2),
-                                  nn.BatchNorm3d(96),
-                                  nn.ReLU(),
-                                  Conv3d(96,192, kernel_size=3, padding=2),
-                                  nn.BatchNorm3d(192),
-                                  nn.ReLU(),
-                                  MaxPool3d(kernel_size=3, stride=(2,2,1)))
+        self.chunk = chunk
+
+
+        if self.chunk:
+            self.stem = nn.Sequential(Conv3d(1,48, kernel_size=3, stride=(2,2,1), bias=True, padding=2),
+                                      nn.BatchNorm3d(48),
+                                      nn.ReLU(),
+                                      MaxPool3d(kernel_size=3, stride=(2,2,1)),
+                                      Conv3d(48,96, kernel_size=3, bias=True, padding=2),
+                                      nn.BatchNorm3d(96),
+                                      nn.ReLU(),
+                                      Conv3d(96,192, kernel_size=3, padding=2),
+                                      nn.BatchNorm3d(192),
+                                      nn.ReLU(),
+                                      MaxPool3d(kernel_size=3, stride=(2,2,1)))
+
+        else:
+            self.stem = nn.Sequential(Conv3d(1, 48, kernel_size=3, stride=(2, 2, 2), bias=True, padding=2),
+                                      nn.BatchNorm3d(48),
+                                      nn.ReLU(),
+                                      MaxPool3d(kernel_size=3, stride=(2, 2, 2)),
+                                      Conv3d(48, 96, kernel_size=3, bias=True, padding=2),
+                                      nn.BatchNorm3d(96),
+                                      nn.ReLU(),
+                                      Conv3d(96, 192, kernel_size=3, padding=2),
+                                      nn.BatchNorm3d(192),
+                                      nn.ReLU(),
+                                      MaxPool3d(kernel_size=3, stride=(2, 2, 2)))
 
 
         self.Block1 = nn.Sequential(InceptionBlock(192),
@@ -106,7 +122,9 @@ class CNNModel(nn.Module):
 
     def forward(self, x):
 
-        x = x.view(x.shape[0]*x.shape[1], x.shape[2], x.shape[3], x.shape[4], x.shape[5])
+
+        if self.chunk:
+            x = x.view(x.shape[0]*x.shape[1], x.shape[2], x.shape[3], x.shape[4], x.shape[5])
 
         stem = self.stem(x)
 
@@ -115,6 +133,7 @@ class CNNModel(nn.Module):
         b3 = self.Block3(b2)
         # b4 = self.Block4(b3).view(-1, 512)
 
+        print(b3.shape)
         avgpool = self.average_pool(b3)
         avgpool = avgpool.view(-1, 512)
 
@@ -124,13 +143,18 @@ class CNNModel(nn.Module):
 
         output = self.regressor(d3)
 
-        return torch.mean(output, 1)
+        if self.chunk:
+            output = torch.mean(output,1)
+
+        return output
 
 
 class CNN3D:
-    def __init__(self):
-        self.CNN = CNNModel()
+    def __init__(self, chunk=True):
+
+        self.CNN = CNNModel(chunk=chunk)
         self.loss = MSELoss()
+        self.chunk = chunk
 
     def _validation_eval(self, val_data):
         val_mean_loss = []
@@ -153,7 +177,7 @@ class CNN3D:
         self.val_losses = []
         self.test_losses = []
         self.optimizer = optim.SGD(self.CNN.parameters(), lr=learning_rate, momentum=momentum, weight_decay=0.0005)
-        scheduler = optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, 'min', factor=0.1, verbose=True, threshold_mode="abs",patience=20)
+        scheduler = optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, 'min', factor=0.5, verbose=True, threshold_mode="abs",patience=5)
         self.CNN.to(device)
 
         for e in range(epochs):

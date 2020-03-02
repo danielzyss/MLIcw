@@ -121,5 +121,7 @@ def NormalizeGreyMatter(image):
 
     if std > 0:
         normalised = (image - mean) / std
+    else:
+        normalised = image-mean
 
     return normalised
