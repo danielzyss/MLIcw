@@ -176,8 +176,8 @@ class CNN3D:
                     for c in range(0, x.shape[1]):
                         chunk = x[:, c]
                         y_chunk = self.CNN(chunk)
-                        chunks_pred.append(y_chunk.item())
-                    y_pred = torch.tensor(np.mean(chunks_pred)).to(device)
+                        chunks_pred.append(y_chunk.detach().cpu().numpy())
+                    y_pred = torch.tensor(np.mean(chunks_pred, 0)).to(device)
                     loss = self.loss(y_pred, y)
                     val_mean_loss.append(loss)
                 else:
