@@ -61,12 +61,12 @@ class BrainMRIDataset(Dataset):
 
         # random crop
         crop = random.randint(0,10)
-        x,y,z = MRI.shape
-        MRI = MRI[crop:-crop, crop:-crop, crop:-crop]
-        MRI = zoom(MRI, (x/(x-2*crop), y/(y-2*crop), z/(z-2*crop)))
+        if crop>0:
+            x,y,z = MRI.shape
+            MRI = MRI[crop:-crop, crop:-crop, crop:-crop]
+            MRI = zoom(MRI, (x/(x-2*crop), y/(y-2*crop), z/(z-2*crop)))
 
         # random shift
         shift_val = random.randint(-8, 8)
         MRI = shift(MRI, shift_val)
-
         return MRI
