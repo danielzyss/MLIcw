@@ -109,7 +109,7 @@ class CNN3Dueda:
             self.val_losses.append(val_loss)
             print('Epoch: %d, Validation Loss = %.4f' % (e, val_loss))
 
-            test_loss = self._test_eval(test_data)
+            test_loss = self._validation_eval(test_data)
             self.test_losses.append(test_loss)
             print('Epoch: %d, Testing Loss = %.4f' % (e, test_loss))
 
