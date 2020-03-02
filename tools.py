@@ -125,3 +125,8 @@ def NormalizeGreyMatter(image):
         normalised = image-mean
 
     return normalised
+
+
+def plot_regression_scatter(y_true, y_pred):
+    plt.scatter(y_pred, label="ground truths")
+    plt.scatter(y)
