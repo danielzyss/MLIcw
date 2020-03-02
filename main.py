@@ -1,5 +1,6 @@
 from funk import *
 from CNN import CNN3D
+from CNNUeda import CNN3Dueda
 
 if __name__ == "__main__":
 
@@ -9,3 +10,6 @@ if __name__ == "__main__":
 
     CNN = CNN3D(chunk=False)
     CNN.train(loader_train, loader_val, loader_test)
+
+    # CNN = CNN3Dueda()
+    # CNN.train(loader_train, loader_val, loader_test)

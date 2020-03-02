@@ -11,7 +11,7 @@ def GetDataset(meta_data_train, meta_data_test, chunk=True, batch_size=16):
 
     # PYTORCH TRANSFORMATION NOT SUPPORTED FOR 3D IMAGES
 
-    train_dataset = BrainMRIDataset(meta_data_train, chunk=chunk)
+    train_dataset = BrainMRIDataset(meta_data_train, chunk=chunk, augment=True)
     test_dataset = BrainMRIDataset(meta_data_test, chunk=chunk, test=True)
 
     train_dataset, val_dataset = random_split(train_dataset, [400, 100])

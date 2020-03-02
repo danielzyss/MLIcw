@@ -10,6 +10,8 @@ from torch.nn import Conv3d, MaxPool3d, AvgPool3d, Linear, ReLU, MSELoss
 import torch.optim as optim
 data_dir = 'data/brain_age/'
 import PIL
+import random
+from scipy.ndimage import zoom, shift
 
 import os
 import torch

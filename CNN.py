@@ -105,9 +105,6 @@ class CNNModel(nn.Module):
         self.Block3 = nn.Sequential(InceptionBlock(512),
                                     InceptionBlock(480),
                                     FireModule(480))
-        # self.Block4 = nn.Sequential(InceptionBlock(512),
-        #                             InceptionBlock(480),
-        #                             FireModule(480))
 
         self.average_pool = AvgPool3d(kernel_size=2)
 
@@ -128,7 +125,6 @@ class CNNModel(nn.Module):
         b1 = self.Block1(stem)
         b2 = self.Block2(b1)
         b3 = self.Block3(b2)
-        # b4 = self.Block4(b3).view(-1, 512)
 
         avgpool = self.average_pool(b3)
         avgpool = avgpool.view(-1, 512)
