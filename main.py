@@ -1,6 +1,6 @@
 from funk import *
 from CNN import CNN3D
-from CNNUeda import CNN3Dueda
+# from CNNUeda import CNN3Dueda
 
 if __name__ == "__main__":
 
