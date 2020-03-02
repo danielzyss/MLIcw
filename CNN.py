@@ -155,12 +155,25 @@ class CNN3D:
         self.CNN.eval()
         with torch.no_grad():
             for t, (x, y) in enumerate(val_data):
-                x = x.to(device=device, dtype=torch.float32)
-                y = y.to(device=device, dtype=torch.float32)
 
-                y_pred = self.CNN(x)
-                loss = self.loss(y_pred, y)
-                val_mean_loss.append(loss)
+                if self.chunk:
+                    x = x.to(device=device, dtype=torch.float32)
+                    y = y.to(device=device, dtype=torch.float32)
+                    chunks_pred = []
+                    for c in range(0, x.shape[1]):
+                        chunk = x[:, c]
+                        y_chunk = self.CNN(chunk)
+                        chunks_pred.append(y_chunk.detach.numpy())
+                    y_pred = torch.tensor(np.mean(chunks_pred)).to(device)
+                    loss = self.loss(y_pred, y)
+                    val_mean_loss.append(loss)
+                else:
+                    x = x.to(device=device, dtype=torch.float32)
+                    y = y.to(device=device, dtype=torch.float32)
+
+                    y_pred = self.CNN(x)
+                    loss = self.loss(y_pred, y)
+                    val_mean_loss.append(loss)
 
         return torch.mean(torch.tensor(val_mean_loss)).item()
 
