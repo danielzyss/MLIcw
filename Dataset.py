@@ -3,7 +3,9 @@ from tools import *
 class BrainMRIDataset(Dataset):
     """Dataset for image segmentation."""
 
-    def __init__(self, meta_data, transform=None, chunk=True, n_chunk=10):
+    def __init__(self, meta_data, test=False, transform=None, chunk=True, n_chunk=10):
+
+        self.test = test
 
         self.IDs = meta_data["subject_id"]
         self.image_paths = {}
@@ -24,16 +26,19 @@ class BrainMRIDataset(Dataset):
         MRI = sitk.GetArrayFromImage(sitk.ReadImage(self.image_paths[ID]))
         MRI = NormalizeGreyMatter(MRI)
 
-        if self.chunk:
+        if self.chunk and not self.test:
+            MRI = self.ChunkDownImage(MRI)
+            MRI = MRI[np.random.randint(0, MRI.shape[0], 1)]
+        if self.chunk and self.test:
             MRI = self.ChunkDownImage(MRI)
 
         if self.transform is not None:
             MRI = self.transform(PIL.Image.fromarray(MRI))
         else:
-            if self.chunk:
+            if self.chunk and self.test:
                 MRI = torch.tensor(MRI, dtype=torch.float32).unsqueeze(1)
             else:
-                MRI = torch.tensor(MRI, dtype=torch.float32).unsqueeze(0)
+                MRI = torch.tensor(MRI, dtype=torch.float32)
 
         age = torch.tensor(self.ages[ID], dtype=torch.float32).unsqueeze(0)
 

@@ -123,9 +123,6 @@ class CNNModel(nn.Module):
     def forward(self, x):
 
 
-        if self.chunk:
-            x = x.view(x.shape[0]*x.shape[1], x.shape[2], x.shape[3], x.shape[4], x.shape[5])
-
         stem = self.stem(x)
 
         b1 = self.Block1(stem)
@@ -142,8 +139,6 @@ class CNNModel(nn.Module):
 
         output = self.regressor(d3)
 
-        if self.chunk:
-            output = torch.mean(output,1)
 
         return output
 
@@ -169,7 +164,7 @@ class CNN3D:
 
         return torch.mean(torch.tensor(val_mean_loss)).item()
 
-    def train(self, train_data, val_data, test_data, epochs=100, learning_rate=0.000001, momentum=0.9,
+    def train(self, train_data, val_data, test_data, epochs=100, learning_rate=0.00001, momentum=0.9,
               print_every=10, save_every=10):
 
         self.train_losses = []
@@ -259,8 +254,17 @@ class CNN3D:
 
         with torch.no_grad():
             for x, y in test_data:
-                x = x.to(device=device, dtype=torch.float32)  # move to device
-                y_preds = self.CNN(x)
-                preds.append(y_preds.numpy())
+                if self.chunk:
+                    x = x.to(device=device, dtype=torch.float32)  # move to device
+                    chunks_pred = []
+                    for c in range(0, x.shape[1]):
+                        chunk = x[:,c]
+                        y_preds = self.CNN(chunk)
+                        chunks_pred.append(y_preds.detach().numpy())
+                    preds.append(np.mean(chunks_pred))
+                else:
+                    x = x.to(device=device, dtype=torch.float32)  # move to device
+                    y_preds = self.CNN(x)
+                    preds.append(y_preds.detach().numpy())
 
         return np.array(preds)
