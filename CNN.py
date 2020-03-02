@@ -190,7 +190,7 @@ class CNN3D:
 
         return torch.mean(torch.tensor(val_mean_loss)).item()
 
-    def train(self, train_data, val_data, test_data, epochs=100, learning_rate=0.000005, momentum=0.9,
+    def train(self, train_data, val_data, test_data, epochs=100, learning_rate=0.00001, momentum=0.9,
               print_every=10, save_every=10):
 
         self.train_losses = []
