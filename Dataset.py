@@ -38,7 +38,7 @@ class BrainMRIDataset(Dataset):
             if self.chunk and self.test:
                 MRI = torch.tensor(MRI, dtype=torch.float32).unsqueeze(1)
             else:
-                MRI = torch.tensor(MRI, dtype=torch.float32)
+                MRI = torch.tensor(MRI, dtype=torch.float32).unsqueeze(0)
 
         age = torch.tensor(self.ages[ID], dtype=torch.float32).unsqueeze(0)
 
