@@ -190,7 +190,7 @@ class CNN3D:
 
         return torch.mean(torch.tensor(val_mean_loss)).item()
 
-    def train(self, train_data, val_data, test_data, epochs=100, learning_rate=0.00001, momentum=0.9,
+    def train(self, train_data, val_data, test_data, epochs=100, learning_rate=0.000005, momentum=0.9,
               print_every=10, save_every=10):
 
         self.train_losses = []
@@ -228,14 +228,19 @@ class CNN3D:
                     else:
                         torch.save(self.CNN.state_dict(), "models/CNN_latest.pt")
 
-            self.train_losses.append(np.mean(mean_epoch_train_loss))
+            mean_train_loss = np.mean(mean_epoch_train_loss)
+            self.train_losses.append(mean_train_loss)
+            print('Epoch: %d, Training Loss = %.4f' % (e, mean_train_loss))
+
             val_loss = self._validation_eval(val_data)
             scheduler.step(val_loss)
             self.val_losses.append(val_loss)
             print('Epoch: %d, Validation Loss = %.4f' % (e, val_loss))
+
             test_loss = self._test_eval(test_data)
             self.test_losses.append(test_loss)
             print('Epoch: %d, Testing Loss = %.4f' % (e, test_loss))
+
             self.plot_loss()
 
     def plot_loss(self):
@@ -274,23 +279,26 @@ class CNN3D:
 
 
     def infer(self, test_data):
-        self.CNN.eval()  # set model to evaluation mode
+        self.CNN.eval()
 
         preds = []
+        ground_truth = []
 
         with torch.no_grad():
             for x, y in test_data:
                 if self.chunk:
-                    x = x.to(device=device, dtype=torch.float32)  # move to device
+                    x = x.to(device=device, dtype=torch.float32)
                     chunks_pred = []
                     for c in range(0, x.shape[1]):
                         chunk = x[:,c]
                         y_preds = self.CNN(chunk)
-                        chunks_pred.append(y_preds.detach().numpy())
-                    preds.append(np.mean(chunks_pred))
+                        chunks_pred.append(y_preds.detach().cpu().numpy())
+                    preds+=np.mean(chunks_pred, 0).tolist()
+                    ground_truth+= y.cpu().numpy().flatten().tolist()
                 else:
-                    x = x.to(device=device, dtype=torch.float32)  # move to device
+                    x = x.to(device=device, dtype=torch.float32)
                     y_preds = self.CNN(x)
-                    preds.append(y_preds.detach().numpy())
+                    preds+=y_preds.detach().cpu().numpy().tolist()
+                    ground_truth += y.cpu().numpy().flatten().tolist()
 
-        return np.array(preds)
+        return np.array(preds), np.array(ground_truth)
